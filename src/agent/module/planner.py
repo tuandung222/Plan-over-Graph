@@ -45,7 +45,6 @@ class ParallelPlanner(Planner):
                 plans = response
                 failed_plans.append(plans)
                 if retry_count == 0:
-                    # prompt = "You have failed to decompose the task. Please try again." + prompt
                     prompt = "Failed to decompose the task. Please ensure the json format is correct and wrapped in triple backticks." + prompt
                 retry_count += 1
                 continue
@@ -105,8 +104,6 @@ class ParallelPlanner(Planner):
 if __name__ == "__main__":
     content = ""
     planner = ParallelPlanner(None, None)
-    print("ojbk")
     tasks = extract_json(content)
-    print("ojbk")
     print(json.dumps(tasks, indent=4))
     
