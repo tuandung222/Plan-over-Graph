@@ -8,5 +8,5 @@ python -m src.agent.main\
     --max_retry 2\
     --extractor 1\
     --test_case "${test_case}"\
-    --test_file "data/dev/${test_case}.json"\
+    --test_file "data/dev/test/${test_case}.json"\
     --output_dir "data/result/llama-31-8b-instruct"\
