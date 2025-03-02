@@ -13,13 +13,8 @@ def get_model(model_name):
         return GPTWrapper(name=model_name)
 
 def extract_json(text: str) -> dict:
-    # json_regex = r'```json\s*\[\s*[\s\S]*?\s*\]\s*(?:```|\Z)'
-    # json_regex = r'```json\s*[\{\[]\s*[\s\S]*?\s*[\}\]]\s*(?:```|\Z)'
-    # json_regex = r'```json\s*(\{.*?\})\s*```'
     json_regex = f'```json\s*([\s\S]*?)\s*```'
     matches = re.findall(json_regex, text)
-    # matches = re.findall(json_regex, text, re.DOTALL)
-    # print(matches)
     if matches and len(matches) > 0:
         json_data = matches[0].replace('```json', '').replace('```', '').strip().replace('\'', '\"')
         try:
@@ -33,7 +28,6 @@ def extract_json(text: str) -> dict:
             parsed_json = json.loads(text)
         except json.JSONDecodeError as e:
             raise ValueError(f"Error parsing JSON data: {e}")
-        # print(parsed_json)
         if isinstance(parsed_json, list) or isinstance(parsed_json, dict):
             return parsed_json
         else:
