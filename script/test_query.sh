@@ -1,4 +1,4 @@
-test_case="30-1-100-s"
+test_case="10-1-100-s"
 
 python -m src.agent.main\
     --task specific_task\
@@ -8,4 +8,4 @@ python -m src.agent.main\
     --scheduler parallel\
     --test_case "${test_case}"\
     --test_file "data/dev/test/${test_case}.json"\
-    --output_dir "data/result/Llama-3.1-8B-Instruct"
+    --output_dir "data/result/Llama-3.1-8B-Instruct-1"

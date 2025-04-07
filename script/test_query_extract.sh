@@ -6,7 +6,7 @@ python -m src.agent.main\
     --model "meta-llama/Llama-3.1-8B-Instruct"\
     --scheduler parallel\
     --max_retry 2\
-    --extractor 1\
+    --extractor true\
     --test_case "${test_case}"\
     --test_file "data/dev/test/${test_case}.json"\
-    --output_dir "data/result/llama-31-8b-instruct"\
+    --output_dir "data/result/llama-31-8b-instruct1"\
