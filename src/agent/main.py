@@ -56,7 +56,7 @@ def main():
     args.output_file = args.output_file + args.test_case if args.output_dir else None
     args.output_file = args.output_file + "-e" if args.extractor else args.output_file
     args.output_file = args.output_file + "-output.json" if args.output_file else None
-    print(args.output_file)
+    logger.info(f"Output file: {args.output_file}")
     
     model = args.model
     scheduler_type = args.scheduler
@@ -90,7 +90,6 @@ def main():
             planner = ParallelPlanner(model, env)
             scheduler = ParallelScheduler(runner, env)
             extractor = None
-            print(type(args.extractor))
             if isinstance(args.extractor, str):
                 extractor = Extractor(get_model(args.extractor))
             else:
