@@ -10,9 +10,9 @@ class Extractor:
         while max_retry > 0:
             try:
                 prompt = instruction.format(example=example, task=task).replace("\'", "\"")
-                print(prompt)
+                # print(prompt)
                 response = self.model.predict(prompt)
-                print(response)
+                # print(response)
                 rules = extract_json(response)
                 return rules
             except ValueError as e:

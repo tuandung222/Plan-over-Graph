@@ -44,7 +44,7 @@ def main():
     parser.add_argument('--template', type=str, required=True, help='The template to use.')
     parser.add_argument("--model", type=str, required=True, help="The model to use.")
     parser.add_argument("--scheduler", type=str, required=True, help="The scheduler to use.")
-    parser.add_argument("--extractor", help="Whether to use the extractor and the model to extract rules.", default=False)
+    parser.add_argument("--extractor", type=bool or str, help="Whether to use the extractor and the model to extract rules.", default=False)
     parser.add_argument("--max_retry", type=int, help="The maximum number of retries.", default=3)
     parser.add_argument("--question", type=str, help="The single question to ask.", default=None)
     parser.add_argument("--test_case", type=str, help="The test case to use.", default=None)
@@ -90,6 +90,7 @@ def main():
             planner = ParallelPlanner(model, env)
             scheduler = ParallelScheduler(runner, env)
             extractor = None
+            print(type(args.extractor))
             if isinstance(args.extractor, str):
                 extractor = Extractor(get_model(args.extractor))
             else:
