@@ -9,4 +9,4 @@ python -m src.agent.main\
     --extractor true\
     --test_case "${test_case}"\
     --test_file "data/dev/test/${test_case}.json"\
-    --output_dir "data/result/llama-31-8b-instruct1"\
+    --output_dir "data/result/llama-31-8b-instruct"\
