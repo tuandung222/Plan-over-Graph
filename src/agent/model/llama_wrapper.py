@@ -34,18 +34,9 @@ class LlamaWrapper(Model):
             
             exit(1)
 
-        # with open("4.txt", "a") as f:
-        #     f.write("\nstart:-------------------------------------\n")
-        #     f.write(prompt)
-        #     f.write("\n")
-        #     f.write(response_text)
-        #     f.write("\nend:-------------------------------------\n")
-        # print(prompt)
-        # print(response_text)
         if "deepseek-r1" in self.model.lower():
             import re
             response_text = re.sub(r'<think>.*?<\/think>', '', response_text, flags=re.DOTALL)
-        # print(response_text)
         return response_text
 
 def main():

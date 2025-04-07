@@ -36,20 +36,12 @@ class QwenWrapper(Model):
             )
             generated_ids = generated_ids[:, model_inputs.input_ids.shape[1]:]
             response = self.tokenizer.decode(generated_ids[0], skip_special_tokens=True)
-            self._log_interaction(prompt, response)
             return response
         
         except Exception as e:
             error_msg = f"{COLOR_CODES['RED']}Error generating response: {e}{RESET}"
             logger.error(error_msg)
             raise RuntimeError(error_msg)
-
-    def _log_interaction(self, prompt, response):
-        with open("5.txt", "a", encoding="utf-8") as f:
-            f.write("\nstart:-------------------------------------\n")
-            f.write(f"Input:\n{prompt}\n")
-            f.write(f"Response:\n{response}\n")
-            f.write("end:-------------------------------------\n")
 
 def main():
     qwen = QwenWrapper()
