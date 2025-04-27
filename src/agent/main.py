@@ -14,28 +14,22 @@ from src.utils.logger_config import logger, COLOR_CODES, RESET
 def preprocess_question(args):
     questions = []
     partial_results = []
-    if args.question:
-        if isinstance(args.question, str):
-            questions.append(json.loads(args.question))
-        else:
-            questions.append(args.question)
-    elif args.test_file:
-        with open(args.test_file, "r") as f:
-            data = json.load(f)
+    with open(args.test_file, "r") as f:
+        data = json.load(f)
+    if not isinstance(data, list):
+        data = [data]
 
-        if os.path.exists(args.output_file):
-            with open(args.output_file, "r") as f:
-                partial_results = json.load(f)
-        else:
-            partial_results = []
-        partial_results = [result for result in partial_results if result['plan'] is not None]
-        processed_questions = set(result['question']['id'] for result in partial_results)
-        for question in data:
-            if question['id'] not in processed_questions:
-                questions.append(question)        
+    if os.path.exists(args.output_file):
+        with open(args.output_file, "r") as f:
+            partial_results = json.load(f)
     else:
-        raise ValueError("Either --question or --test_file must be provided.")
-    
+        partial_results = []
+    partial_results = [result for result in partial_results if result['plan'] is not None]
+    processed_questions = set(result['question']['id'] for result in partial_results)
+    for question in data:
+        if question['id'] not in processed_questions:
+            questions.append(question)
+            
     return partial_results, questions
             
 def main():
@@ -46,20 +40,15 @@ def main():
     parser.add_argument("--scheduler", type=str, required=True, help="The scheduler to use.")
     parser.add_argument("--extractor", type=bool or str, help="Whether to use the extractor and the model to extract rules.", default=False)
     parser.add_argument("--max_retry", type=int, help="The maximum number of retries.", default=3)
-    parser.add_argument("--question", type=str, help="The single question to ask.", default=None)
     parser.add_argument("--test_case", type=str, help="The test case to use.", default=None)
-    parser.add_argument("--test_file", type=str, help="The test file to use.", default=None)
     parser.add_argument("--output_dir", type=str, help="The output file to write to.", default=None)
 
     args = parser.parse_args()
+    args.test_file = f"data/dev/test/${args.test_case}.json"
     args.output_file = args.output_dir + "/" if args.output_dir and not args.output_dir.endswith("/") else args.output_dir
     args.output_file = args.output_file + args.test_case if args.output_dir else None
     args.output_file = args.output_file + "-e" if args.extractor else args.output_file
     args.output_file = args.output_file + "-output.json" if args.output_file else None
-    logger.info(f"Output file: {args.output_file}")
-    
-    model = args.model
-    scheduler_type = args.scheduler
     
     if args.output_file:
         output_dir = os.path.dirname(args.output_file)
@@ -67,12 +56,14 @@ def main():
             os.makedirs(output_dir)
 
     logger.info(f"Running task: {args.task}")
-    logger.info(f"Using model: {model}")
-    logger.info(f"Using scheduler: {scheduler_type}")
+    logger.info(f"Using model: {args.model}")
+    logger.info(f"Using scheduler: {args.scheduler}")
     logger.info(f"Using extractor: {args.extractor}")
+    logger.info(f"Output file: {args.output_file}")
     
-    model = get_model(model)
+    model = get_model(args.model)
     
+    multiprocessing.set_start_method('spawn')
     
     try:
         def save_results(partial_results, output_file):
@@ -81,46 +72,48 @@ def main():
         
         partial_results, questions = preprocess_question(args)
         for question in questions:
-            if args.task == "abstask" or args.task == "specific_task":
-                env = TTEnv(question['question'])
-                runner = TTRunner(None, None)
-                node_type = SubTTNode    
-            else:
-                raise ValueError(f"Unsupported task: {args.task}")
-            planner = ParallelPlanner(model, env)
-            scheduler = ParallelScheduler(runner, env)
-            extractor = None
-            if isinstance(args.extractor, str):
-                extractor = Extractor(get_model(args.extractor))
-            else:
-                extractor = Extractor(model)
-            
-            max_retry = args.max_retry
             retry_count = 0
             plan = None
             all_failed_plans = []
-            while retry_count < max_retry:
+            extractor = None
+            if isinstance(args.extractor, str):
+                if args.extractor == args.model:
+                    extractor = Extractor(model)
+                else:
+                    extractor = Extractor(get_model(args.extractor))
+            else:
+                extractor = Extractor(model)       
+            
+            while retry_count < args.max_retry:
                 try:
                     prompt = ""
+                    template_module = importlib.import_module(f'template.{args.template}')
+                    instruction = template_module.instruction
+                    example = template_module.example
                     
-                    if args.task == "abstask":
-                        template_module = importlib.import_module(f'template.{args.template}')
-                        instruction = template_module.instruction
-                        example = template_module.example
-                        prompt = instruction.format(example=example, task=question['question'])                        
+                    if args.task == "abstask":    
+                        prompt = instruction.format(example=example, task=question['question'])
                     elif args.task == "specific_task":
-                        task = question['story']                    
+                        task = question['story']
                         if args.extractor:
-                            task = extractor.extract(task, max_retry)
-                        template_module = importlib.import_module(f'template.{args.template}')
-                        instruction = template_module.instruction
-                        example = template_module.example
+                            task = extractor.extract(task, args.max_retry)
                         prompt = instruction.format(example=example, task=task)
-                        
+                    else:
+                        raise ValueError(f"Unsupported task: {args.task}")
+
+                    if "question" in question:
+                        env = TTEnv(question['question'])
+                    else:
+                        env = TTEnv(task)
+
                     prompt = prompt.replace("\'", "\"")
-                    
-                    # print(prompt)
-                    subtasks, plan, valid, failed_plans = planner.plan(prompt, node_type, max_retry)
+
+                    runner = TTRunner(None, None)
+                    node_type = SubTTNode
+                    planner = ParallelPlanner(model, env)
+                    scheduler = ParallelScheduler(runner, env)
+
+                    subtasks, plan, valid, failed_plans = planner.plan(prompt, node_type, args.max_retry)
                     if valid:
                         result = scheduler.run(subtasks)
                         break
@@ -143,9 +136,7 @@ def main():
                 partial_results[-1]['model_rules'] = task
             if args.output_file:
                 save_results(partial_results, args.output_file)
-        if args.output_file:
-           save_results(partial_results, args.output_file) 
-        else:
+        if not args.output_file:
             logger.info(f"Results: {COLOR_CODES['CYAN']}{partial_results}{RESET}")
     
 
