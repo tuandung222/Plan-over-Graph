@@ -31,8 +31,9 @@ class LlamaWrapper(Model):
         except Exception as e:            
             print(e)
             logger.error(f"Error: {COLOR_CODES['RED']}{e}{RESET}")
-            
             exit(1)
+
+        self.log_conversation(prompt, response_text, log_file="logs/llama_conversation.txt")
 
         if "deepseek-r1" in self.model.lower():
             import re
@@ -40,7 +41,7 @@ class LlamaWrapper(Model):
         return response_text
 
 def main():
-    llama_wrapper = LlamaWrapper(model="/data/share/data/llama-factory/1/DeepSeek-R1-Distill-Llama-8B")
+    llama_wrapper = LlamaWrapper()
     prompt = "What is the capital of France?"
     response = llama_wrapper.predict(prompt)
     print(response)

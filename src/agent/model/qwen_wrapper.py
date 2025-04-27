@@ -36,6 +36,7 @@ class QwenWrapper(Model):
             )
             generated_ids = generated_ids[:, model_inputs.input_ids.shape[1]:]
             response = self.tokenizer.decode(generated_ids[0], skip_special_tokens=True)
+            self.log_conversation(prompt, response, log_file="logs/qwen_conversation.txt")
             return response
         
         except Exception as e:

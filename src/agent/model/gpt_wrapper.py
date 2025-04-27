@@ -71,13 +71,14 @@ class GPTWrapper(Model):
             except Exception as e:
                 logger.error(f"Unexpected error: {COLOR_CODES['RED']}{e}{RESET}")
                 raise e
+        self.log_conversation(prompt, response, log_file=f"logs/{self.name}_conversation.txt")
         return response
     
 def main():
-    from template.specific_task import instruction, example_task
+    from template.specific_task import instruction, example
     task = """{'rules': [{'id': 0, 'source': ['N1'], 'target': ['N2'], 'time': 41, 'cost': 1}, {'id': 1, 'source': ['N2'], 'target': ['N3'], 'time': 25, 'cost': 1}, {'id': 2, 'source': ['N3', 'N1'], 'target': ['N4'], 'time': 13, 'cost': 1}, {'id': 3, 'source': ['N2'], 'target': ['N4'], 'time': 22, 'cost': 1}, {'id': 4, 'source': ['N4', 'N1', 'N2'], 'target': ['N5'], 'time': 19, 'cost': 1}, {'id': 5, 'source': ['N1'], 'target': ['N6'], 'time': 13, 'cost': 1}, {'id': 6, 'source': ['N4'], 'target': ['N6'], 'time': 16, 'cost': 1}, {'id': 7, 'source': ['N5'], 'target': ['N6'], 'time': 9, 'cost': 1}, {'id': 8, 'source': ['N3', 'N5'], 'target': ['N7'], 'time': 10, 'cost': 1}, {'id': 9, 'source': ['N1'], 'target': ['N7'], 'time': 5, 'cost': 1}, {'id': 10, 'source': ['N6', 'N3'], 'target': ['N8'], 'time': 10, 'cost': 1}, {'id': 11, 'source': ['N6'], 'target': ['N9'], 'time': 29, 'cost': 1}, {'id': 12, 'source': ['N3'], 'target': ['N9'], 'time': 10, 'cost': 1}, {'id': 13, 'source': ['N5'], 'target': ['N9'], 'time': 48, 'cost': 1}, {'id': 14, 'source': ['N8'], 'target': ['N9'], 'time': 17, 'cost': 1}, {'id': 15, 'source': ['N2', 'N3', 'N5'], 'target': ['N10'], 'time': 8, 'cost': 1}, {'id': 16, 'source': ['N6', 'N4', 'N9'], 'target': ['N10'], 'time': 24, 'cost': 1}], 'initial_source': ['N1'], 'target': 'N10'}"""
     model = GPTWrapper(name="claude-3-5-sonnet-20241022")
-    prompt = instruction.format(task=task, example_task=example_task)
+    prompt = instruction.format(task=task, example=example)
     response = model.predict(prompt)
     print(response)
 

@@ -44,7 +44,7 @@ def main():
     parser.add_argument("--output_dir", type=str, help="The output file to write to.", default=None)
 
     args = parser.parse_args()
-    args.test_file = f"data/dev/test/${args.test_case}.json"
+    args.test_file = f"data/dev/test/{args.test_case}.json"
     args.output_file = args.output_dir + "/" if args.output_dir and not args.output_dir.endswith("/") else args.output_dir
     args.output_file = args.output_file + args.test_case if args.output_dir else None
     args.output_file = args.output_file + "-e" if args.extractor else args.output_file
