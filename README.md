@@ -19,13 +19,12 @@ pip install -r requirements.txt
 ```
 3. Download the dataset:
 ```bash
-mkdir data
-cd data
+mkdir data && cd data
 wget https://huggingface.co/datasets/hastin/plan-over-graph/resolve/main/data.zip 
-unzip data.zip
-rm data.zip
+unzip data.zip && rm data.zip
 cd ..
 ```
+> We provide our results in `result/` folder for your reference.
 4. Run the testing script:
 You can run the testing script to evaluate the model on the test set.
 ```bash
