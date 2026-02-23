@@ -1,0 +1,70 @@
+{
+  "tools": [
+    {
+      "name": "web_search",
+      "description": "Search public web pages and return ranked results.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string"}
+        },
+        "required": ["query"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "results": {"type": "array"}
+        },
+        "required": ["results"]
+      },
+      "latency_ms": 1200,
+      "cost_hint": 0.02,
+      "reliability": 0.94,
+      "side_effect": "none"
+    },
+    {
+      "name": "calculator",
+      "description": "Perform deterministic arithmetic calculations.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "expression": {"type": "string"}
+        },
+        "required": ["expression"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "value": {"type": "number"}
+        },
+        "required": ["value"]
+      },
+      "latency_ms": 50,
+      "cost_hint": 0.0,
+      "reliability": 0.99,
+      "side_effect": "none"
+    },
+    {
+      "name": "final_answer",
+      "description": "Return a user-facing final response.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "content": {"type": "string"}
+        },
+        "required": ["content"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "answer": {"type": "string"}
+        },
+        "required": ["answer"]
+      },
+      "latency_ms": 20,
+      "cost_hint": 0.0,
+      "reliability": 1.0,
+      "side_effect": "none"
+    }
+  ]
+}

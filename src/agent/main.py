@@ -19,7 +19,7 @@ def preprocess_question(args):
     if not isinstance(data, list):
         data = [data]
 
-    if os.path.exists(args.output_file):
+    if args.output_file and os.path.exists(args.output_file):
         with open(args.output_file, "r") as f:
             partial_results = json.load(f)
     else:
@@ -42,6 +42,9 @@ def main():
     parser.add_argument("--max_retry", type=int, help="The maximum number of retries.", default=3)
     parser.add_argument("--test_case", type=str, help="The test case to use.", default=None)
     parser.add_argument("--output_dir", type=str, help="The output file to write to.", default=None)
+    parser.add_argument("--planner_mode", type=str, default="legacy", help="Planner mode: legacy | tool_aware")
+    parser.add_argument("--tool_registry", type=str, default=None, help="Path to tool registry JSON for tool-aware planning.")
+    parser.add_argument("--worker_mode", type=str, default="simulate", help="Worker mode for tool-aware results: simulate | react_handoff")
 
     args = parser.parse_args()
     args.test_file = f"data/dev/test/{args.test_case}.json"
@@ -60,8 +63,17 @@ def main():
     logger.info(f"Using scheduler: {args.scheduler}")
     logger.info(f"Using extractor: {args.extractor}")
     logger.info(f"Output file: {args.output_file}")
+    logger.info(f"Planner mode: {args.planner_mode}")
     
     model = get_model(args.model)
+    tool_registry = None
+    if args.planner_mode == "tool_aware":
+        from src.agent.module.tooling.registry import ToolRegistry
+
+        if not args.tool_registry:
+            raise ValueError("tool_registry is required when planner_mode is 'tool_aware'")
+        tool_registry = ToolRegistry.from_file(args.tool_registry)
+        logger.info(f"Loaded tool registry with {len(tool_registry.list_tool_names())} tools from {args.tool_registry}")
     
     multiprocessing.set_start_method('spawn')
     
@@ -91,33 +103,65 @@ def main():
                     instruction = template_module.instruction
                     example = template_module.example
                     
-                    if args.task == "abstask":    
-                        prompt = instruction.format(example=example, task=question['question'])
-                    elif args.task == "specific_task":
-                        task = question['story']
-                        if args.extractor:
-                            task = extractor.extract(task, args.max_retry)
-                        prompt = instruction.format(example=example, task=task)
+                    env = None
+                    if args.planner_mode == "tool_aware":
+                        from src.agent.module.tooling.planner_tool_aware import ToolAwarePlanner
+
+                        if args.task == "abstask":
+                            task = question['question']
+                        elif args.task == "specific_task":
+                            task = question['story']
+                            if args.extractor:
+                                task = extractor.extract(task, args.max_retry)
+                        else:
+                            raise ValueError(f"Unsupported task: {args.task}")
+
+                        if tool_registry is None:
+                            raise ValueError("tool_registry is not loaded")
+                        prompt = instruction.format(
+                            example=example,
+                            task=task,
+                            tool_catalog=tool_registry.to_prompt_block()
+                        )
+                        planner = ToolAwarePlanner(model, tool_registry)
+                        plan, valid, failed_plans, handoff = planner.plan(prompt, args.max_retry)
+                        if valid:
+                            result = {
+                                "worker_mode": args.worker_mode,
+                                "react_handoff": handoff,
+                            }
+                            break
+                        retry_count += 1
+                        result = None
+                        all_failed_plans.extend(failed_plans)
+                        all_failed_plans.append(plan)
                     else:
-                        raise ValueError(f"Unsupported task: {args.task}")
+                        if args.task == "abstask":    
+                            prompt = instruction.format(example=example, task=question['question'])
+                        elif args.task == "specific_task":
+                            task = question['story']
+                            if args.extractor:
+                                task = extractor.extract(task, args.max_retry)
+                            prompt = instruction.format(example=example, task=task)
+                        else:
+                            raise ValueError(f"Unsupported task: {args.task}")
 
-                    if "question" in question:
-                        env = TTEnv(question['question'])
-                    else:
-                        env = TTEnv(task)
+                        if "question" in question:
+                            env = TTEnv(question['question'])
+                        else:
+                            env = TTEnv(task)
 
-                    prompt = prompt.replace("\'", "\"")
+                        prompt = prompt.replace("\'", "\"")
 
-                    runner = TTRunner(None, None)
-                    node_type = SubTTNode
-                    planner = ParallelPlanner(model, env)
-                    scheduler = ParallelScheduler(runner, env)
+                        runner = TTRunner(None, None)
+                        node_type = SubTTNode
+                        planner = ParallelPlanner(model, env)
+                        scheduler = ParallelScheduler(runner, env)
 
-                    subtasks, plan, valid, failed_plans = planner.plan(prompt, node_type, args.max_retry)
-                    if valid:
-                        result = scheduler.run(subtasks)
-                        break
-                    else:
+                        subtasks, plan, valid, failed_plans = planner.plan(prompt, node_type, args.max_retry)
+                        if valid:
+                            result = scheduler.run(subtasks)
+                            break
                         retry_count += 1
                         result = None
                         env.reset()
@@ -129,7 +173,8 @@ def main():
                     logger.error(f"Error1: {COLOR_CODES['RED']}{e}{RESET}")
                     retry_count += 1
                     result = None
-                    env.reset()
+                    if env is not None:
+                        env.reset()
                     
             partial_results.append({'question': question, 'failed_plans': all_failed_plans, 'plan': plan, 'result': result})
             if args.extractor:

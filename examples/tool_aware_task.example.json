@@ -1,0 +1,7 @@
+{
+  "user_goal": "Compare two cloud GPU providers for small-team fine-tuning and recommend one option.",
+  "constraints": {
+    "max_total_calls": 8,
+    "deadline_minutes": 5
+  }
+}
