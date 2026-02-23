@@ -116,6 +116,10 @@ def main():
                         else:
                             raise ValueError(f"Unsupported task: {args.task}")
 
+                        if "{tool_catalog}" not in instruction:
+                            raise ValueError(
+                                "tool_aware mode requires a template that contains '{tool_catalog}' placeholder"
+                            )
                         if tool_registry is None:
                             raise ValueError("tool_registry is not loaded")
                         prompt = instruction.format(
@@ -123,6 +127,7 @@ def main():
                             task=task,
                             tool_catalog=tool_registry.to_prompt_block()
                         )
+                        prompt = prompt.replace("\'", "\"")
                         planner = ToolAwarePlanner(model, tool_registry)
                         plan, valid, failed_plans, handoff = planner.plan(prompt, args.max_retry)
                         if valid:
