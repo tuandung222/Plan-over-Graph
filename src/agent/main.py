@@ -44,7 +44,12 @@ def main():
     parser.add_argument("--output_dir", type=str, help="The output file to write to.", default=None)
     parser.add_argument("--planner_mode", type=str, default="legacy", help="Planner mode: legacy | tool_aware")
     parser.add_argument("--tool_registry", type=str, default=None, help="Path to tool registry JSON for tool-aware planning.")
-    parser.add_argument("--worker_mode", type=str, default="simulate", help="Worker mode for tool-aware results: simulate | react_handoff")
+    parser.add_argument(
+        "--worker_mode",
+        type=str,
+        default="simulate",
+        help="Worker mode for tool-aware results: simulate | react_handoff | react_execute",
+    )
 
     args = parser.parse_args()
     args.test_file = f"data/dev/test/{args.test_case}.json"
@@ -67,12 +72,16 @@ def main():
     
     model = get_model(args.model)
     tool_registry = None
+    tool_worker = None
     if args.planner_mode == "tool_aware":
         from src.agent.module.tooling.registry import ToolRegistry
+        from src.agent.module.tooling.runtime import ToolRuntime
+        from src.agent.module.tooling.worker import ToolAwareWorker
 
         if not args.tool_registry:
             raise ValueError("tool_registry is required when planner_mode is 'tool_aware'")
         tool_registry = ToolRegistry.from_file(args.tool_registry)
+        tool_worker = ToolAwareWorker(tool_registry, ToolRuntime(tool_registry))
         logger.info(f"Loaded tool registry with {len(tool_registry.list_tool_names())} tools from {args.tool_registry}")
     
     multiprocessing.set_start_method('spawn')
@@ -131,10 +140,33 @@ def main():
                         planner = ToolAwarePlanner(model, tool_registry)
                         plan, valid, failed_plans, handoff = planner.plan(prompt, args.max_retry)
                         if valid:
-                            result = {
-                                "worker_mode": args.worker_mode,
-                                "react_handoff": handoff,
-                            }
+                            if args.worker_mode == "react_execute":
+                                if tool_worker is None:
+                                    raise ValueError("tool_worker is not initialized")
+                                execution = tool_worker.execute_handoff(handoff)
+                                result = {
+                                    "worker_mode": args.worker_mode,
+                                    "react_handoff": handoff,
+                                    "execution": execution,
+                                }
+                            elif args.worker_mode == "react_handoff":
+                                result = {
+                                    "worker_mode": args.worker_mode,
+                                    "react_handoff": handoff,
+                                }
+                            elif args.worker_mode == "simulate":
+                                result = {
+                                    "worker_mode": args.worker_mode,
+                                    "react_handoff": handoff,
+                                    "simulation": {
+                                        "planned_tasks": len(handoff),
+                                        "status": "simulated",
+                                    },
+                                }
+                            else:
+                                raise ValueError(
+                                    "worker_mode must be one of: simulate, react_handoff, react_execute"
+                                )
                             break
                         retry_count += 1
                         result = None

@@ -10,7 +10,7 @@ python -m src.agent.main \
   --scheduler parallel \
   --planner_mode tool_aware \
   --tool_registry "examples/tool_registry.example.json" \
-  --worker_mode react_handoff \
+  --worker_mode react_execute \
   --max_retry 2 \
   --test_case "${test_case}" \
   --output_dir "data/result/tool-aware-plan"

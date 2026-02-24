@@ -18,6 +18,10 @@ Tài liệu này mô tả phần mở rộng `tool-aware` đã thêm theo hướ
   - `src/agent/module/tooling/adapter.py`
 - Planner mới:
   - `src/agent/module/tooling/planner_tool_aware.py`
+- Runtime gọi tool thật:
+  - `src/agent/module/tooling/runtime.py`
+- Worker execute theo DAG dependency:
+  - `src/agent/module/tooling/worker.py`
 - Prompt template:
   - `template/tool_aware_plan.py`
 
@@ -26,7 +30,7 @@ Tài liệu này mô tả phần mở rộng `tool-aware` đã thêm theo hướ
 Đã thêm vào `src/agent/main.py`:
 - `--planner_mode legacy|tool_aware` (default: `legacy`)
 - `--tool_registry <path>` (bắt buộc khi `tool_aware`)
-- `--worker_mode simulate|react_handoff` (default: `simulate`)
+- `--worker_mode simulate|react_handoff|react_execute` (default: `simulate`)
 
 ## 4) Tool registry mẫu
 
@@ -39,7 +43,11 @@ Script mẫu:
 
 Lưu ý:
 - Script vẫn dùng model runtime, nên cần môi trường model/API phù hợp.
-- Trong mode `tool_aware`, output lưu `react_handoff` payload để đưa sang worker layer.
+- Trong mode `tool_aware`:
+  - `react_handoff`: chỉ xuất payload bàn giao cho worker.
+  - `react_execute`: thực thi tool thật theo dependency DAG.
+- Registry mẫu hiện dùng tool `duckduckgo_search`.
+- Runtime DuckDuckGo dùng Instant Answer API, không cần API key.
 
 ## 6) Contract output (tool-aware)
 

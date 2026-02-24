@@ -1,12 +1,13 @@
 {
   "tools": [
     {
-      "name": "web_search",
-      "description": "Search public web pages and return ranked results.",
+      "name": "duckduckgo_search",
+      "description": "Search the public web via DuckDuckGo Instant Answer API.",
       "input_schema": {
         "type": "object",
         "properties": {
-          "query": {"type": "string"}
+          "query": {"type": "string"},
+          "max_results": {"type": "integer"}
         },
         "required": ["query"]
       },

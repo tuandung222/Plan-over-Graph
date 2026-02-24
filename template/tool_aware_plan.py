@@ -51,7 +51,7 @@ example = """
       "name": "Subtask1",
       "goal": "Collect required product specs from internal source",
       "dependencies": [],
-      "allowed_tools": ["search_internal_docs"],
+      "allowed_tools": ["duckduckgo_search"],
       "success_criteria": "Return a structured spec summary with required fields",
       "output_schema": {"type": "object", "required": ["title", "requirements"]},
       "budget": {"max_calls": 3, "max_cost": 0.05},
