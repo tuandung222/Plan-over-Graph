@@ -46,8 +46,16 @@ Lưu ý:
 - Trong mode `tool_aware`:
   - `react_handoff`: chỉ xuất payload bàn giao cho worker.
   - `react_execute`: thực thi tool thật theo dependency DAG.
-- Registry mẫu hiện dùng tool `duckduckgo_search`.
-- Runtime DuckDuckGo dùng Instant Answer API, không cần API key.
+- Registry mẫu hiện có các tool không cần API key:
+  - `duckduckgo_search`
+  - `wikipedia_search`
+  - `arxiv_search`
+  - `fetch_url`
+  - `current_datetime`
+  - `calculator`
+  - `final_answer`
+- Runtime network tools dùng API/public endpoint, không cần API key.
+- Một số endpoint public có thể rate-limit theo IP (ví dụ arXiv có thể trả `429`).
 
 ## 6) Contract output (tool-aware)
 

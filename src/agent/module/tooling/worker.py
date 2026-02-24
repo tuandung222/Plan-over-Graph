@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+import re
 
 from src.agent.module.tooling.runtime import ToolRuntime, ToolRuntimeError
 from src.agent.module.tooling.registry import ToolRegistry
@@ -87,6 +88,30 @@ class ToolAwareWorker:
                 "max_results": min(max_calls, 10),
             }
 
+        if tool_name in ("wikipedia_search", "arxiv_search"):
+            context_hint = _context_to_text(context)
+            query = goal if not context_hint else f"{goal}. Context: {context_hint}"
+            return {
+                "query": query.strip(),
+                "max_results": min(max_calls, 10),
+            }
+
+        if tool_name == "fetch_url":
+            url = _extract_first_url_from_context(context)
+            if not url:
+                url = _extract_first_url_from_text(goal)
+            if not url:
+                raise ToolRuntimeError(
+                    f"task '{task['task_name']}' needs fetch_url but no URL found in goal/context"
+                )
+            return {
+                "url": url,
+                "max_chars": 6000,
+            }
+
+        if tool_name == "current_datetime":
+            return {}
+
         if tool_name == "calculator":
             return {"expression": goal}
 
@@ -102,3 +127,28 @@ def _context_to_text(context: dict[str, Any]) -> str:
         output = value.get("output", value) if isinstance(value, dict) else value
         chunks.append(f"{key}={str(output)[:200]}")
     return " | ".join(chunks)
+
+
+def _extract_first_url_from_text(text: str) -> str | None:
+    if not isinstance(text, str):
+        return None
+    match = re.search(r"https?://[^\s)]+", text)
+    return match.group(0) if match else None
+
+
+def _extract_first_url_from_context(context: dict[str, Any]) -> str | None:
+    for _, value in context.items():
+        output = value.get("output", value) if isinstance(value, dict) else value
+        if isinstance(output, dict):
+            if isinstance(output.get("url"), str):
+                return output.get("url")
+            results = output.get("results")
+            if isinstance(results, list):
+                for item in results:
+                    if isinstance(item, dict) and isinstance(item.get("url"), str):
+                        return item["url"]
+        if isinstance(output, list):
+            for item in output:
+                if isinstance(item, dict) and isinstance(item.get("url"), str):
+                    return item["url"]
+    return None

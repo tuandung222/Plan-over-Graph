@@ -24,6 +24,97 @@
       "side_effect": "none"
     },
     {
+      "name": "wikipedia_search",
+      "description": "Search Wikipedia articles via the public Opensearch API.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string"},
+          "max_results": {"type": "integer"}
+        },
+        "required": ["query"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "results": {"type": "array"}
+        },
+        "required": ["results"]
+      },
+      "latency_ms": 900,
+      "cost_hint": 0.0,
+      "reliability": 0.96,
+      "side_effect": "none"
+    },
+    {
+      "name": "arxiv_search",
+      "description": "Search arXiv papers via the public Atom API.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string"},
+          "max_results": {"type": "integer"}
+        },
+        "required": ["query"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "results": {"type": "array"}
+        },
+        "required": ["results"]
+      },
+      "latency_ms": 1200,
+      "cost_hint": 0.0,
+      "reliability": 0.95,
+      "side_effect": "none"
+    },
+    {
+      "name": "fetch_url",
+      "description": "Fetch a URL and extract text content and page title.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "url": {"type": "string"},
+          "max_chars": {"type": "integer"}
+        },
+        "required": ["url"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "url": {"type": "string"},
+          "title": {"type": "string"},
+          "text": {"type": "string"}
+        },
+        "required": ["url", "text"]
+      },
+      "latency_ms": 1400,
+      "cost_hint": 0.0,
+      "reliability": 0.92,
+      "side_effect": "none"
+    },
+    {
+      "name": "current_datetime",
+      "description": "Return current UTC time and unix timestamp.",
+      "input_schema": {
+        "type": "object",
+        "properties": {}
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "utc_iso": {"type": "string"},
+          "unix_ts": {"type": "integer"}
+        },
+        "required": ["utc_iso", "unix_ts"]
+      },
+      "latency_ms": 5,
+      "cost_hint": 0.0,
+      "reliability": 1.0,
+      "side_effect": "none"
+    },
+    {
       "name": "calculator",
       "description": "Perform deterministic arithmetic calculations.",
       "input_schema": {
